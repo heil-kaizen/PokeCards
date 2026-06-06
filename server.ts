@@ -193,16 +193,19 @@ app.post("/api/eligibility", async (req, res) => {
         const data = await resp.json() as any;
         const amountStr = data?.result?.value?.[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmountString || "0";
         const amount = parseFloat(amountStr);
-        const isEligible = amount >= 500000;
+        const minTokenAmount = parseFloat(process.env.MIN_TOKEN_AMOUNT || "500000");
+        const isEligible = amount >= minTokenAmount;
         return await handleEligibilityResult(isEligible, amount);
       } catch (e) {
         console.error("Helius API error:", e);
         // fallback
-        return await handleEligibilityResult(true, 500000, true);
+        const minTokenAmount = parseFloat(process.env.MIN_TOKEN_AMOUNT || "500000");
+        return await handleEligibilityResult(true, minTokenAmount, true);
       }
     } else {
       // If no API key, pretend they hold it and unlock preview functionality.
-      return await handleEligibilityResult(true, 500000, true);
+      const minTokenAmount = parseFloat(process.env.MIN_TOKEN_AMOUNT || "500000");
+      return await handleEligibilityResult(true, minTokenAmount, true);
     }
   } catch (error) {
     console.error("Error checking eligibility:", error);
@@ -581,7 +584,8 @@ setInterval(async () => {
             const data = await resp.json() as any;
             const amountStr = data?.result?.value?.[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmountString || "0";
             const amount = parseFloat(amountStr);
-            if (amount < 500000) {
+            const minTokenAmount = parseFloat(process.env.MIN_TOKEN_AMOUNT || "500000");
+            if (amount < minTokenAmount) {
                // Remove from current eligibility
                await pool.query("UPDATE reward_holders SET current_cycle_eligible = false WHERE wallet_address = $1", [h.wallet_address]);
                await pool.query("UPDATE eligible_wallets SET eligible = false, token_balance = $1, last_checked_at = $2 WHERE wallet_address = $3", [amount, now, h.wallet_address]);
