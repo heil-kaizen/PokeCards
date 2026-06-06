@@ -196,21 +196,28 @@ app.post("/api/eligibility", async (req, res) => {
           console.error("Helius API returned an error:", data.error);
           return res.status(500).json({ error: "Helius API error: " + data.error.message });
         }
-        const amountStr = data?.result?.value?.[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmountString || "0";
-        const amount = parseFloat(amountStr);
+        
+        let totalAmount = 0;
+        if (data?.result?.value && Array.isArray(data.result.value)) {
+           for (const acc of data.result.value) {
+              const amountStr = acc?.account?.data?.parsed?.info?.tokenAmount?.uiAmountString || "0";
+              totalAmount += parseFloat(amountStr);
+           }
+        }
+        
         const minTokenAmount = parseFloat(process.env.MIN_TOKEN_AMOUNT || "500000");
-        const isEligible = amount >= minTokenAmount;
-        return await handleEligibilityResult(isEligible, amount);
+        const isEligible = totalAmount >= minTokenAmount;
+        
+        console.log(`[Eligibility Check] Wallet: ${wallet} | Token: ${targetToken} | Balance Found: ${totalAmount} | Required: ${minTokenAmount} | Eligible: ${isEligible}`);
+        
+        return await handleEligibilityResult(isEligible, totalAmount);
       } catch (e) {
         console.error("Helius API error:", e);
-        // fallback
-        const minTokenAmount = parseFloat(process.env.MIN_TOKEN_AMOUNT || "500000");
-        return await handleEligibilityResult(true, minTokenAmount, true);
+        return await handleEligibilityResult(false, 0, false);
       }
     } else {
-      // If no API key, pretend they hold it and unlock preview functionality.
-      const minTokenAmount = parseFloat(process.env.MIN_TOKEN_AMOUNT || "500000");
-      return await handleEligibilityResult(true, minTokenAmount, true);
+      console.error("No Helius API key provided.");
+      return await handleEligibilityResult(false, 0, false);
     }
   } catch (error) {
     console.error("Error checking eligibility:", error);
@@ -224,11 +231,18 @@ app.post("/api/pack/status", async (req, res) => {
     if (!wallet) return res.status(400).json({ error: "Wallet required" });
 
     let lastOpenAt = 0;
+    let isEligible = false;
+    
     if (pool) {
+      const elR = await pool.query("SELECT eligible FROM eligible_wallets WHERE wallet_address = $1", [wallet]);
+      if (elR.rows.length > 0 && elR.rows[0].eligible) {
+         isEligible = true;
+      }
       const r = await pool.query("SELECT last_open_at FROM users WHERE wallet = $1", [wallet]);
       if (r.rows.length > 0) lastOpenAt = parseInt(r.rows[0].last_open_at) || 0;
     } else {
       lastOpenAt = inMemoryVault[wallet]?.lastOpenAt || 0;
+      isEligible = true;
     }
 
     const now = Date.now();
@@ -236,7 +250,7 @@ app.post("/api/pack/status", async (req, res) => {
     const elapsed = now - lastOpenAt;
     const timeRemaining = Math.max(0, cooldownMs - elapsed);
 
-    return res.json({ timeRemaining, canOpen: timeRemaining === 0 });
+    return res.json({ timeRemaining, canOpen: timeRemaining === 0 && isEligible });
   } catch (error) {
     console.error("Error fetching status:", error);
     return res.status(500).json({ error: "Server error fetching status" });
@@ -250,6 +264,11 @@ app.post("/api/pack/open", async (req, res) => {
 
     let lastOpenAt = 0;
     if (pool) {
+      const elR = await pool.query("SELECT eligible FROM eligible_wallets WHERE wallet_address = $1", [wallet]);
+      if (elR.rows.length === 0 || !elR.rows[0].eligible) {
+          return res.status(403).json({ error: "Wallet is not eligible to open packs. Must hold the target asset." });
+      }
+
       const r = await pool.query("SELECT last_open_at FROM users WHERE wallet = $1", [wallet]);
       if (r.rows.length > 0) lastOpenAt = parseInt(r.rows[0].last_open_at) || 0;
     } else {
@@ -591,15 +610,22 @@ setInterval(async () => {
                console.error("Helius API error during cron check for wallet", h.wallet_address, ":", data.error);
                continue; // Default fail-safe, don't strip user if API fails
             }
-            const amountStr = data?.result?.value?.[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmountString || "0";
-            const amount = parseFloat(amountStr);
+            
+            let totalAmount = 0;
+            if (data?.result?.value && Array.isArray(data.result.value)) {
+               for (const acc of data.result.value) {
+                  const amountStr = acc?.account?.data?.parsed?.info?.tokenAmount?.uiAmountString || "0";
+                  totalAmount += parseFloat(amountStr);
+               }
+            }
+            
             const minTokenAmount = parseFloat(process.env.MIN_TOKEN_AMOUNT || "500000");
-            if (amount < minTokenAmount) {
+            if (totalAmount < minTokenAmount) {
                // Remove from current eligibility
                await pool.query("UPDATE reward_holders SET current_cycle_eligible = false WHERE wallet_address = $1", [h.wallet_address]);
-               await pool.query("UPDATE eligible_wallets SET eligible = false, token_balance = $1, last_checked_at = $2 WHERE wallet_address = $3", [amount, now, h.wallet_address]);
+               await pool.query("UPDATE eligible_wallets SET eligible = false, token_balance = $1, last_checked_at = $2 WHERE wallet_address = $3", [totalAmount, now, h.wallet_address]);
             } else {
-               await pool.query("UPDATE eligible_wallets SET token_balance = $1, last_checked_at = $2 WHERE wallet_address = $3", [amount, now, h.wallet_address]);
+               await pool.query("UPDATE eligible_wallets SET token_balance = $1, last_checked_at = $2 WHERE wallet_address = $3", [totalAmount, now, h.wallet_address]);
             }
           } catch (e) {
             console.error("Helius recheck error:", e);
