@@ -1,0 +1,6 @@
+{
+  "name": "PokeGrails",
+  "description": "A high-end nostalgic collectible card pack experience on Solana",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
