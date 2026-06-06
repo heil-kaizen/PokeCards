@@ -8,7 +8,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -22,9 +22,10 @@ let inMemoryVault: Record<string, {
 
 // Database setup
 let pool: pg.Pool | null = null;
-if (process.env.DATABASE_URL) {
+const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+if (dbUrl) {
   pool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: dbUrl,
     ssl: { rejectUnauthorized: false }
   });
   
@@ -191,6 +192,10 @@ app.post("/api/eligibility", async (req, res) => {
           })
         });
         const data = await resp.json() as any;
+        if (data.error) {
+          console.error("Helius API returned an error:", data.error);
+          return res.status(500).json({ error: "Helius API error: " + data.error.message });
+        }
         const amountStr = data?.result?.value?.[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmountString || "0";
         const amount = parseFloat(amountStr);
         const minTokenAmount = parseFloat(process.env.MIN_TOKEN_AMOUNT || "500000");
@@ -582,6 +587,10 @@ setInterval(async () => {
               })
             });
             const data = await resp.json() as any;
+            if (data.error) {
+               console.error("Helius API error during cron check for wallet", h.wallet_address, ":", data.error);
+               continue; // Default fail-safe, don't strip user if API fails
+            }
             const amountStr = data?.result?.value?.[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmountString || "0";
             const amount = parseFloat(amountStr);
             const minTokenAmount = parseFloat(process.env.MIN_TOKEN_AMOUNT || "500000");
