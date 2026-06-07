@@ -8,6 +8,10 @@
   font-style: normal;
 }
 
+html, body {
+  overflow-x: hidden;
+}
+
 @theme {
   --font-sans: "ByteBounce", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "ByteBounce", "Space Grotesk", "Inter", sans-serif;
