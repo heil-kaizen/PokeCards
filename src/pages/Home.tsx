@@ -34,10 +34,10 @@ export function Home() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16 space-y-6"
         >
-          <h1 className="text-6xl md:text-7xl lg:text-8xl tracking-widest text-white leading-[1.1]" style={{ fontFamily: "ByteBounce, monospace", textShadow: "4px 4px 0px rgba(0,0,0,0.15), 2px 2px 0px #2d2d2d, -1px -1px 0 #2d2d2d, 1px -1px 0 #2d2d2d, -1px 1px 0 #2d2d2d, 1px 1px 0 #2d2d2d" }}>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl tracking-widest text-white leading-[1.1]" style={{ fontFamily: "ByteBounce, monospace", textShadow: "4px 4px 0px rgba(0,0,0,0.15), 2px 2px 0px #2d2d2d, -1px -1px 0 #2d2d2d, 1px -1px 0 #2d2d2d, -1px 1px 0 #2d2d2d, 1px 1px 0 #2d2d2d" }}>
             THE <span className="text-[#f74170]">POKEGRAILS</span> VAULT
           </h1>
-          <p className="text-3xl text-white max-w-2xl mx-auto tracking-wide" style={{ fontFamily: "ByteBounce, monospace", textShadow: "2px 2px 0px #2d2d2d, -1px -1px 0 #2d2d2d, 1px -1px 0 #2d2d2d, -1px 1px 0 #2d2d2d, 1px 1px 0 #2d2d2d" }}>
+          <p className="text-xl md:text-3xl text-white max-w-2xl mx-auto tracking-wide px-2" style={{ fontFamily: "ByteBounce, monospace", textShadow: "2px 2px 0px #2d2d2d, -1px -1px 0 #2d2d2d, 1px -1px 0 #2d2d2d, -1px 1px 0 #2d2d2d, 1px 1px 0 #2d2d2d" }}>
             Welcome to the ultimate collector's experience. Track token metrics and unlock premium artifacts.
           </p>
         </motion.div>
@@ -55,12 +55,12 @@ export function Home() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="space-y-6 text-left"
+              className="space-y-6 text-center lg:text-left"
             >
-              <h2 className="text-6xl md:text-7xl lg:text-8xl tracking-widest text-white leading-[1.1]" style={{ fontFamily: "ByteBounce, monospace", textShadow: "4px 4px 0px rgba(0,0,0,0.15), 2px 2px 0px #2d2d2d, -1px -1px 0 #2d2d2d, 1px -1px 0 #2d2d2d, -1px 1px 0 #2d2d2d, 1px 1px 0 #2d2d2d" }}>
-                CRACK OPEN <br/> THE <span className="text-[#f74170]">MAGIC</span>
+              <h2 className="text-5xl md:text-7xl lg:text-8xl tracking-widest text-white leading-[1.1]" style={{ fontFamily: "ByteBounce, monospace", textShadow: "4px 4px 0px rgba(0,0,0,0.15), 2px 2px 0px #2d2d2d, -1px -1px 0 #2d2d2d, 1px -1px 0 #2d2d2d, -1px 1px 0 #2d2d2d, 1px 1px 0 #2d2d2d" }}>
+                CRACK OPEN <br className="hidden lg:block"/> THE <span className="text-[#f74170]">MAGIC</span>
               </h2>
-              <p className="text-2xl text-white max-w-md tracking-wide" style={{ fontFamily: "ByteBounce, monospace", textShadow: "1px 1px 0px #2d2d2d, -1px -1px 0 #2d2d2d, 1px -1px 0 #2d2d2d, -1px 1px 0 #2d2d2d, 1px 1px 0 #2d2d2d" }}>
+              <p className="text-xl md:text-2xl text-white max-w-md mx-auto lg:mx-0 tracking-wide" style={{ fontFamily: "ByteBounce, monospace", textShadow: "1px 1px 0px #2d2d2d, -1px -1px 0 #2d2d2d, 1px -1px 0 #2d2d2d, -1px 1px 0 #2d2d2d, 1px 1px 0 #2d2d2d" }}>
                 Hold 500k tokens to unlock premium collector packs. Discover legendary artifacts, complete your vault, and earn rewards.
               </p>
             </motion.div>
