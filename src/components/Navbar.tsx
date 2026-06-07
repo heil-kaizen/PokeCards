@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { useState, useEffect } from "react";
+import { Twitter } from "lucide-react";
 
 export function Navbar() {
   const location = useLocation();
@@ -134,6 +135,17 @@ export function Navbar() {
           >
              <span>My Vault</span>
           </Link>
+          <a
+            href="https://twitter.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center p-1 sm:p-1.5 transition-transform hover:-translate-y-[1px] bg-[#1DA1F2] text-white border-2 border-[#2d2d2d] rounded-none hover:bg-[#1a91da] shrink-0"
+            style={{ 
+              boxShadow: "2px 2px 0px 0px #2d2d2d" 
+            }}
+          >
+            <Twitter size={16} fill="white" className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
+          </a>
         </div>
       </div>
     </nav>
