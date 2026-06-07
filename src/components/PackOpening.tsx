@@ -164,6 +164,7 @@ function VideoPortal({ onComplete }: { onComplete: () => void }) {
 
   return createPortal(
     <>
+      <audio autoPlay src="https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/PokeBall-8-bit.mp3" />
       {/* Background Overlay */}
       <div className="fixed inset-0 z-[125] bg-black/80 backdrop-blur-md pointer-events-none" />
       
