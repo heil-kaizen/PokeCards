@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Copy, RefreshCw, Search, Shield, ShieldCheck, CheckCircle2, XCircle, Ban, Hammer } from "lucide-react";
+import { Copy, RefreshCw, Search, Shield, ShieldCheck, CheckCircle2, XCircle, Ban, Hammer, Trash2 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 type RewardHolder = {
@@ -13,6 +13,7 @@ type RewardHolder = {
   times_eligible: number;
   is_blacklisted: boolean;
   last_checked_at: string | null;
+  last_rare_pull_time: string | null;
 };
 
 export function AdminRewards() {
@@ -100,6 +101,23 @@ export function AdminRewards() {
     return true;
   });
 
+  const handleClearDb = async () => {
+    if (!confirm("DANGER: Are you sure you want to completely wipe all tables from the database? This cannot be undone!")) return;
+    if (!confirm("DOUBLE CHECK: All packs, pulls, and rewards will be deleted! Proceed?")) return;
+    try {
+      const res = await fetch("/api/admin/clear-db", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password })
+      });
+      if (!res.ok) throw new Error("Failed to clear database");
+      alert("Database wiped successfully!");
+      handleLogin(); // refresh
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
   const handleMarkSent = async () => {
     if (!confirm("Are you sure you want to mark all rewards for the completed cycle as sent?")) return;
     try {
@@ -169,6 +187,14 @@ export function AdminRewards() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <button 
+              onClick={handleClearDb}
+              disabled={loading}
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-base font-bold transition-colors disabled:opacity-50"
+            >
+              <Trash2 className="w-5 h-5" />
+              Wipe Database
+            </button>
             <button 
               onClick={handleMarkSent}
               disabled={loading}
@@ -286,13 +312,14 @@ export function AdminRewards() {
                   <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Next</th>
                   <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Times</th>
                   <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                  <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Last Pull</th>
                   <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredHolders.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">
+                    <td colSpan={10} className="px-6 py-12 text-center text-slate-500 font-medium">
                       No holders match your filters.
                     </td>
                   </tr>
@@ -368,6 +395,9 @@ export function AdminRewards() {
                             Active
                           </span>
                         )}
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap text-center font-medium text-slate-600">
+                        {h.last_rare_pull_time ? new Date(parseInt(h.last_rare_pull_time)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                       </td>
                       <td className="px-6 py-5 whitespace-nowrap text-right">
                         <button
