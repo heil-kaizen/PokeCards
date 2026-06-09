@@ -62,6 +62,7 @@ if (dbUrl) {
     );
     ALTER TABLE reward_holders ADD COLUMN IF NOT EXISTS times_eligible INT DEFAULT 0;
     ALTER TABLE reward_holders ADD COLUMN IF NOT EXISTS is_blacklisted BOOLEAN DEFAULT false;
+    ALTER TABLE reward_holders ADD COLUMN IF NOT EXISTS last_rare_pull_time BIGINT;
     CREATE TABLE IF NOT EXISTS reward_cycles (
       cycle_id SERIAL PRIMARY KEY,
       started_at BIGINT,
@@ -365,15 +366,17 @@ app.post("/api/pack/open", async (req, res) => {
           reward_share_percent, 
           current_cycle_eligible, 
           next_cycle_eligible, 
-          created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          created_at,
+          last_rare_pull_time
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         ON CONFLICT (wallet_address) DO UPDATE SET
           epic_count = reward_holders.epic_count + EXCLUDED.epic_count,
           legendary_count = reward_holders.legendary_count + EXCLUDED.legendary_count,
           reward_share_percent = reward_holders.reward_share_percent + EXCLUDED.reward_share_percent,
           current_cycle_eligible = CASE WHEN EXCLUDED.current_cycle_eligible THEN TRUE ELSE reward_holders.current_cycle_eligible END,
-          next_cycle_eligible = CASE WHEN EXCLUDED.next_cycle_eligible THEN TRUE ELSE reward_holders.next_cycle_eligible END
-      `, [wallet, pulledEpic, pulledLegendary, addedPercent, isFirst10Mins, !isFirst10Mins, now]);
+          next_cycle_eligible = CASE WHEN EXCLUDED.next_cycle_eligible THEN TRUE ELSE reward_holders.next_cycle_eligible END,
+          last_rare_pull_time = EXCLUDED.last_rare_pull_time
+      `, [wallet, pulledEpic, pulledLegendary, addedPercent, isFirst10Mins, !isFirst10Mins, now, now]);
     }
   } else {
     // In-memory fallback
@@ -414,6 +417,7 @@ app.post("/api/admin/rewards", async (req, res) => {
         rh.next_cycle_eligible,
         rh.times_eligible,
         rh.is_blacklisted,
+        rh.last_rare_pull_time,
         ew.last_checked_at
       FROM reward_holders rh
       LEFT JOIN eligible_wallets ew ON rh.wallet_address = ew.wallet_address
@@ -444,6 +448,25 @@ app.post("/api/admin/rewards/blacklist", async (req, res) => {
     return res.json({ success: true });
   } catch (err) {
     console.error("Blacklist error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/admin/clear-db", async (req, res) => {
+  const { password } = req.body;
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  if (password !== adminPassword) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    if (!pool) return res.status(500).json({ error: "DB not initialized" });
+    
+    await pool.query("TRUNCATE TABLE users, eligible_wallets, collected_cards, reward_holders, reward_cycles RESTART IDENTITY CASCADE");
+    
+    return res.json({ success: true, message: "Database wiped successfully" });
+  } catch (err) {
+    console.error("Clear DB error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
