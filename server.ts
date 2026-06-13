@@ -63,6 +63,14 @@ if (dbUrl) {
     ALTER TABLE reward_holders ADD COLUMN IF NOT EXISTS times_eligible INT DEFAULT 0;
     ALTER TABLE reward_holders ADD COLUMN IF NOT EXISTS is_blacklisted BOOLEAN DEFAULT false;
     ALTER TABLE reward_holders ADD COLUMN IF NOT EXISTS last_rare_pull_time BIGINT;
+    ALTER TABLE reward_holders ADD COLUMN IF NOT EXISTS set_boost_percent NUMERIC DEFAULT 0;
+    ALTER TABLE collected_cards ADD COLUMN IF NOT EXISTS card_set VARCHAR(255);
+    CREATE TABLE IF NOT EXISTS completed_sets (
+      wallet_address VARCHAR(255),
+      set_name VARCHAR(255),
+      completed_at BIGINT,
+      PRIMARY KEY (wallet_address, set_name)
+    );
     CREATE TABLE IF NOT EXISTS reward_cycles (
       cycle_id SERIAL PRIMARY KEY,
       started_at BIGINT,
@@ -76,6 +84,30 @@ if (dbUrl) {
 }
 
 // Card Databases
+const setCelebrations = [
+  { name: "[Set] Cosmog", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Celebrations%20(25th%20Anniversary)-2021/Cosmog013.webp" },
+  { name: "[Set] Flying Pikachu", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Celebrations%20(25th%20Anniversary)-2021/Flying-Pikachu006.webp" },
+  { name: "[Set] Ho-Oh", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Celebrations%20(25th%20Anniversary)-2021/Ho-Oh001.webp" },
+  { name: "[Set] Kyogre", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Celebrations%20(25th%20Anniversary)-2021/Kyroge003.webp" },
+  { name: "[Set] Palkia", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Celebrations%20(25th%20Anniversary)-2021/Palkia004.webp" },
+  { name: "[Set] Reshiram", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Celebrations%20(25th%20Anniversary)-2021/Reshiram002.webp" },
+  { name: "[Set] Xerneas", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Celebrations%20(25th%20Anniversary)-2021/Xerneas012.webp" },
+  { name: "[Set] Zekrom", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Celebrations%20(25th%20Anniversary)-2021/Zekrom010.webp" }
+].map(c => ({...c, setName: "Celebrations (25th Anniversary)-2021"}));
+
+const setStellar = [
+  { name: "[Set] Area Zero Underdepths", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Scarlet%20%26%20Violet%E2%80%94Stellar%20Crown%20Expansion/Area-Zero-Underdepths.webp" },
+  { name: "[Set] Cinderace", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Scarlet%20%26%20Violet%E2%80%94Stellar%20Crown%20Expansion/Cinderace.webp" },
+  { name: "[Set] Galvantula", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Scarlet%20%26%20Violet%E2%80%94Stellar%20Crown%20Expansion/Galvantula.webp" },
+  { name: "[Set] Joltik", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Scarlet%20%26%20Violet%E2%80%94Stellar%20Crown%20Expansion/Joltik.webp" },
+  { name: "[Set] Lapras", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Scarlet%20%26%20Violet%E2%80%94Stellar%20Crown%20Expansion/Lapras.webp" },
+  { name: "[Set] Raboot", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Scarlet%20%26%20Violet%E2%80%94Stellar%20Crown%20Expansion/Raboot.webp" },
+  { name: "[Set] Squirtle", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Scarlet%20%26%20Violet%E2%80%94Stellar%20Crown%20Expansion/Squirtle.webp" },
+  { name: "[Set] Terapagos", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Card%20Set%20Reward/Scarlet%20%26%20Violet%E2%80%94Stellar%20Crown%20Expansion/Terapagos.webp" }
+].map(c => ({...c, setName: "Scarlet & Violet—Stellar Crown Expansion"}));
+
+const setCards = [...setCelebrations, ...setStellar];
+
 const legendaryCards = [
   { name: "Giratina V", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Legendary%20Webp/Giratina%20V.webp" },
   { name: "Illustrator Pikachu", url: "https://raw.githubusercontent.com/heil-kaizen/PokeCards/main/PokeCardsImg/Legendary%20Webp/Illustrator%20Pikachu.webp" },
@@ -140,10 +172,11 @@ const commonCards = [
 
 // Randomizer helpers
 const rarities = [
-  { type: "Common", chance: 70 },
+  { type: "Common", chance: 69 },
   { type: "Rare", chance: 20 },
   { type: "Epic", chance: 8 },
-  { type: "Legendary", chance: 2 }
+  { type: "Legendary", chance: 2 },
+  { type: "SetLegendary", chance: 1 }
 ];
 
 const pickRarity = () => {
@@ -288,11 +321,17 @@ app.post("/api/pack/open", async (req, res) => {
     let rarity = pickRarity();
     let name = "Mystic Token Card";
     let imageUrl = null;
+    let cardSet = null;
     
     if (rarity === "Legendary") {
       const g = legendaryCards[Math.floor(Math.random() * legendaryCards.length)];
       name = g.name;
       imageUrl = g.url;
+    } else if (rarity === "SetLegendary") {
+      const g = setCards[Math.floor(Math.random() * setCards.length)];
+      name = g.name;
+      imageUrl = g.url;
+      cardSet = g.setName;
     } else if (rarity === "Epic") {
       const g = epicCards[Math.floor(Math.random() * epicCards.length)];
       name = g.name;
@@ -311,7 +350,8 @@ app.post("/api/pack/open", async (req, res) => {
       rarity,
       name,
       imageIdx: Math.floor(Math.random() * 10) + 1,
-      imageUrl
+      imageUrl,
+      cardSet
     };
   });
 
@@ -333,16 +373,33 @@ app.post("/api/pack/open", async (req, res) => {
     await pool.query("INSERT INTO users (wallet, last_open_at) VALUES ($1, $2) ON CONFLICT (wallet) DO UPDATE SET last_open_at = $2", [wallet, now]);
     for (const c of generated) {
       if (c.rarity === "Epic") pulledEpic++;
-      if (c.rarity === "Legendary") pulledLegendary++;
+      if (c.rarity === "Legendary" || c.rarity === "SetLegendary") pulledLegendary++;
 
       await pool.query(
-        "INSERT INTO collected_cards (wallet_address, card_name, rarity, image_url, obtained_at) VALUES ($1, $2, $3, $4, $5)",
-        [wallet, c.name, c.rarity, c.imageUrl, now]
+        "INSERT INTO collected_cards (wallet_address, card_name, rarity, image_url, obtained_at, card_set) VALUES ($1, $2, $3, $4, $5, $6)",
+        [wallet, c.name, c.rarity, c.imageUrl, now, c.cardSet || null]
       );
     }
     
     // Cycle and reward logic
-    if (pulledEpic > 0 || pulledLegendary > 0) {
+    // Check for set completion
+    let addedSetBoost = 0;
+    const distinctCardsRes = await pool.query(
+      "SELECT card_set, COUNT(DISTINCT card_name) as cnt FROM collected_cards WHERE wallet_address = $1 AND card_set IS NOT NULL GROUP BY card_set",
+      [wallet]
+    );
+    for (const row of distinctCardsRes.rows) {
+      if (parseInt(row.cnt) >= 8) { // each set has 8 cards
+        const setName = row.card_set;
+        const isCompletedRes = await pool.query("SELECT * FROM completed_sets WHERE wallet_address = $1 AND set_name = $2", [wallet, setName]);
+        if (isCompletedRes.rows.length === 0) {
+          await pool.query("INSERT INTO completed_sets (wallet_address, set_name, completed_at) VALUES ($1, $2, $3)", [wallet, setName, now]);
+          addedSetBoost += 10; // 10% boost per completed set
+        }
+      }
+    }
+
+    if (pulledEpic > 0 || pulledLegendary > 0 || addedSetBoost > 0) {
       let activeCycleRes = await pool.query("SELECT * FROM reward_cycles WHERE completed = false ORDER BY cycle_id DESC LIMIT 1");
       let cycle = activeCycleRes.rows[0];
       
@@ -353,10 +410,7 @@ app.post("/api/pack/open", async (req, res) => {
       const cycleStart = parseInt(cycle.started_at);
       const isFirst10Mins = now - cycleStart <= 10 * 60 * 1000;
       
-      let curEligible = isFirst10Mins ? 'TRUE' : 'FALSE';
-      let nxtEligible = isFirst10Mins ? 'FALSE' : 'TRUE';
-      
-      const addedPercent = pulledEpic * 0.1 + pulledLegendary * 0.5;
+      const addedPercent = pulledEpic * 0.1 + pulledLegendary * 0.5 + addedSetBoost;
       
       await pool.query(`
         INSERT INTO reward_holders (
@@ -367,16 +421,18 @@ app.post("/api/pack/open", async (req, res) => {
           current_cycle_eligible, 
           next_cycle_eligible, 
           created_at,
-          last_rare_pull_time
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          last_rare_pull_time,
+          set_boost_percent
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         ON CONFLICT (wallet_address) DO UPDATE SET
           epic_count = reward_holders.epic_count + EXCLUDED.epic_count,
           legendary_count = reward_holders.legendary_count + EXCLUDED.legendary_count,
           reward_share_percent = reward_holders.reward_share_percent + EXCLUDED.reward_share_percent,
           current_cycle_eligible = CASE WHEN EXCLUDED.current_cycle_eligible THEN TRUE ELSE reward_holders.current_cycle_eligible END,
           next_cycle_eligible = CASE WHEN EXCLUDED.next_cycle_eligible THEN TRUE ELSE reward_holders.next_cycle_eligible END,
-          last_rare_pull_time = EXCLUDED.last_rare_pull_time
-      `, [wallet, pulledEpic, pulledLegendary, addedPercent, isFirst10Mins, !isFirst10Mins, now, now]);
+          last_rare_pull_time = EXCLUDED.last_rare_pull_time,
+          set_boost_percent = reward_holders.set_boost_percent + EXCLUDED.set_boost_percent
+      `, [wallet, pulledEpic, pulledLegendary, addedPercent, isFirst10Mins, !isFirst10Mins, now, now, addedSetBoost]);
     }
   } else {
     // In-memory fallback
@@ -418,6 +474,7 @@ app.post("/api/admin/rewards", async (req, res) => {
         rh.times_eligible,
         rh.is_blacklisted,
         rh.last_rare_pull_time,
+        rh.set_boost_percent,
         ew.last_checked_at
       FROM reward_holders rh
       LEFT JOIN eligible_wallets ew ON rh.wallet_address = ew.wallet_address
@@ -554,7 +611,8 @@ app.get("/api/vault/:wallet", async (req, res) => {
         rarity: row.rarity,
         name: row.card_name,
         imageUrl: row.image_url,
-        discovered_at: row.obtained_at
+        discovered_at: row.obtained_at,
+        cardSet: row.card_set
       }));
     } else {
       cards = (inMemoryVault[wallet]?.cards || []).sort((a,b) => b.discovered_at - a.discovered_at);
