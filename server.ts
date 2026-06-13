@@ -657,7 +657,8 @@ app.get("/api/vault/:wallet", async (req, res) => {
           { id: 4, rarity: "Legendary", name: legendaryCards[0].name, imageUrl: legendaryCards[0].url, discovered_at: Date.now() },
           { id: 5, rarity: "SetLegendary", name: setCards[0].name, imageUrl: setCards[0].url, discovered_at: Date.now(), cardSet: setCards[0].setName }
        ];
-       return res.json({ cards: allMockCards });
+       const totalUniqueCards = commonCards.length + rareCards.length + epicCards.length + legendaryCards.length + setCards.length;
+       return res.json({ cards: allMockCards, totalUniqueCards });
     }
 
     let cards = [];
@@ -675,7 +676,8 @@ app.get("/api/vault/:wallet", async (req, res) => {
     } else {
       cards = (inMemoryVault[wallet]?.cards || []).sort((a,b) => b.discovered_at - a.discovered_at);
     }
-    return res.json({ cards });
+    const totalUniqueCards = commonCards.length + rareCards.length + epicCards.length + legendaryCards.length + setCards.length;
+    return res.json({ cards, totalUniqueCards });
   } catch (error) {
     console.error("Error fetching vault:", error);
     return res.status(500).json({ error: "Server error fetching collection" });
