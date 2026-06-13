@@ -27,7 +27,7 @@ export function TokenDashboard() {
   const [data, setData] = useState<TokenData | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const CA = "CcZShPVDmsVfWToqiM2zkSgfeXJjn38XkG1TuLtkpump";
+  const CA = "coming soon";
 
   useEffect(() => {
     // Fetch live data from DexScreener using tokens endpoint
