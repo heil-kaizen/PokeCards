@@ -6,6 +6,7 @@ import { Lock, Award, Star, Zap } from "lucide-react";
 export function Vault() {
   const wallet = useStore(s => s.wallet);
   const cards = useStore(s => s.cards);
+  const totalUniqueCards = useStore(s => s.totalUniqueCards);
   const isEligible = useStore(s => s.isEligible);
 
   if (!wallet) {
@@ -25,6 +26,9 @@ export function Vault() {
   const legendaryCount = cards.filter(c => c.rarity === "Legendary").length;
   // Calculate reward share based on new parameters
   const rewardShare = ((epicCount * 0.1) + (legendaryCount * 0.5)).toFixed(1); // %
+
+  const uniqueCollected = new Set(cards.map(c => c.name)).size;
+  const collectionProgress = totalUniqueCards > 0 ? (uniqueCollected / totalUniqueCards) * 100 : 0;
 
   const rarityOrder: Record<string, number> = {
     Legendary: 4,
@@ -71,6 +75,25 @@ export function Vault() {
                {legendaryCount} L / {epicCount} E
              </div>
            </div>
+        </div>
+      </motion.div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-10 bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 p-6"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-white font-bold tracking-wide">Collection Progress</h3>
+          <span className="text-slate-300 font-mono text-sm">
+            {uniqueCollected} / {totalUniqueCards} Unique Cards
+          </span>
+        </div>
+        <div className="w-full bg-slate-800 rounded-full h-3">
+          <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-1000 ease-out" style={{ width: `${collectionProgress}%` }}></div>
+        </div>
+        <div className="mt-2 text-right text-xs text-indigo-400 font-bold uppercase">
+          {collectionProgress.toFixed(1)}% Complete
         </div>
       </motion.div>
 
