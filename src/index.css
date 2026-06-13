@@ -36,3 +36,16 @@ html, body {
 @keyframes spin-slow {
   to { transform: rotate(360deg); }
 }
+
+@keyframes gradient-xy {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@utility animate-gradient-xy {
+  animation: gradient-xy 3s ease infinite;
+}
