@@ -13,7 +13,7 @@ export function HowItWorks() {
     {
       icon: Sparkles,
       title: "2. Open Daily Packs",
-      desc: "Visit the dashboard every 10 minutes to crack open a premium pack. Each pack contains 8 random cards.",
+      desc: "Visit the dashboard every 5 minutes to crack open a premium pack. Each pack contains 8 random cards.",
       color: "text-[#f74170]",
       bg: "bg-[#ffe0e9]"
     },
