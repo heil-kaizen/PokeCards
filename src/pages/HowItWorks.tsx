@@ -20,7 +20,7 @@ export function HowItWorks() {
     {
       icon: Gem,
       title: "3. Collect & Earn",
-      desc: "Build your vault. Epic cards grant 0.1% and Legendary cards grant a 0.5% share of the reward pool.",
+      desc: "Build your vault. Epic cards grant 0.1% and Legendary cards grant 0.5% share. Complete a full 8-card legendary set for a massive 10% bonus share!",
       color: "text-[#2e7d32]",
       bg: "bg-[#e8f5e9]"
     },
