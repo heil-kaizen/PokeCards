@@ -14,6 +14,7 @@ type RewardHolder = {
   is_blacklisted: boolean;
   last_checked_at: string | null;
   last_rare_pull_time: string | null;
+  set_boost_percent: string | number;
 };
 
 export function AdminRewards() {
@@ -307,6 +308,7 @@ export function AdminRewards() {
                   <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider">Wallet</th>
                   <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Epic</th>
                   <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Legendary</th>
+                  <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Set Boost</th>
                   <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Share</th>
                   <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Current</th>
                   <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Next</th>
@@ -353,6 +355,13 @@ export function AdminRewards() {
                       <td className="px-6 py-5 whitespace-nowrap text-center font-bold text-slate-700">
                         {h.legendary_count > 0 ? (
                            <span className="text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg text-lg">{h.legendary_count}</span>
+                        ) : (
+                           <span className="text-slate-300 text-lg">0</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap text-center font-bold text-slate-700">
+                        {Number(h.set_boost_percent || 0) > 0 ? (
+                           <span className="text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg text-lg">+{Number(h.set_boost_percent)}%</span>
                         ) : (
                            <span className="text-slate-300 text-lg">0</span>
                         )}
