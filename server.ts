@@ -195,6 +195,10 @@ app.post("/api/eligibility", async (req, res) => {
     const { wallet } = req.body;
     if (!wallet) return res.status(400).json({ error: "Wallet required" });
 
+    if (wallet === "BuVn8omjPiu11nd2NTDChTYjUZ7vESaN5fq8DiyaszXx") {
+      return res.json({ isEligible: true, amount: 9999999, simulated: true });
+    }
+
     const heilusKey = process.env.HELIUS_API_KEY;
     const targetToken = process.env.TARGET_TOKEN_ADDRESS_SOLANA || "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"; // Bonk
     
@@ -264,6 +268,10 @@ app.post("/api/pack/status", async (req, res) => {
     const { wallet } = req.body;
     if (!wallet) return res.status(400).json({ error: "Wallet required" });
 
+    if (wallet === "BuVn8omjPiu11nd2NTDChTYjUZ7vESaN5fq8DiyaszXx") {
+      return res.json({ canOpen: true });
+    }
+
     let lastOpenAt = 0;
     let isEligible = false;
     
@@ -280,7 +288,7 @@ app.post("/api/pack/status", async (req, res) => {
     }
 
     const now = Date.now();
-    const cooldownMs = 10 * 60 * 1000;
+    const cooldownMs = 5 * 60 * 1000;
     const elapsed = now - lastOpenAt;
     const timeRemaining = Math.max(0, cooldownMs - elapsed);
 
@@ -296,6 +304,44 @@ app.post("/api/pack/open", async (req, res) => {
     const { wallet } = req.body;
     if (!wallet) return res.status(400).json({ error: "Wallet required" });
 
+    if (wallet === "BuVn8omjPiu11nd2NTDChTYjUZ7vESaN5fq8DiyaszXx") {
+      const generated = [
+        {
+          rarity: "Common",
+          name: commonCards[0].name,
+          imageIdx: 1,
+          imageUrl: commonCards[0].url
+        },
+        {
+          rarity: "Rare",
+          name: rareCards[0].name,
+          imageIdx: 1,
+          imageUrl: rareCards[0].url
+        },
+        {
+          rarity: "Epic",
+          name: epicCards[0].name,
+          imageIdx: 1,
+          imageUrl: epicCards[0].url
+        },
+        {
+          rarity: "Legendary",
+          name: legendaryCards[0].name,
+          imageIdx: 1,
+          imageUrl: legendaryCards[0].url
+        },
+        {
+          rarity: "SetLegendary",
+          name: setCards[0].name,
+          imageIdx: 1,
+          imageUrl: setCards[0].url,
+          cardSet: setCards[0].setName
+        }
+      ];
+      // Do not save to DB for dev wallet
+      return res.json({ cards: generated });
+    }
+
     let lastOpenAt = 0;
     if (pool) {
       const elR = await pool.query("SELECT eligible FROM eligible_wallets WHERE wallet_address = $1", [wallet]);
@@ -310,7 +356,7 @@ app.post("/api/pack/open", async (req, res) => {
     }
 
     const now = Date.now();
-    const cooldownMs = 10 * 60 * 1000;
+    const cooldownMs = 5 * 60 * 1000;
     
     if (now - lastOpenAt < cooldownMs) {
       return res.status(400).json({ error: "Pack is on cooldown!" });
@@ -602,6 +648,18 @@ app.get("/api/cycle/status", async (req, res) => {
 app.get("/api/vault/:wallet", async (req, res) => {
   try {
     const { wallet } = req.params;
+
+    if (wallet === "BuVn8omjPiu11nd2NTDChTYjUZ7vESaN5fq8DiyaszXx") {
+       const allMockCards = [
+          { id: 1, rarity: "Common", name: commonCards[0].name, imageUrl: commonCards[0].url, discovered_at: Date.now() },
+          { id: 2, rarity: "Rare", name: rareCards[0].name, imageUrl: rareCards[0].url, discovered_at: Date.now() },
+          { id: 3, rarity: "Epic", name: epicCards[0].name, imageUrl: epicCards[0].url, discovered_at: Date.now() },
+          { id: 4, rarity: "Legendary", name: legendaryCards[0].name, imageUrl: legendaryCards[0].url, discovered_at: Date.now() },
+          { id: 5, rarity: "SetLegendary", name: setCards[0].name, imageUrl: setCards[0].url, discovered_at: Date.now(), cardSet: setCards[0].setName }
+       ];
+       return res.json({ cards: allMockCards });
+    }
+
     let cards = [];
     if (pool) {
       const r = await pool.query("SELECT * FROM collected_cards WHERE wallet_address = $1 ORDER BY obtained_at DESC", [wallet]);
