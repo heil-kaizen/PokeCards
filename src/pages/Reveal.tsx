@@ -103,7 +103,8 @@ export function Reveal() {
 }
 
 export function CardItem({ card, className }: { card: any, className?: string }) {
-  const isLegendary = card.rarity === "Legendary";
+  const isSetLegendary = card.rarity === "SetLegendary" || card.cardSet;
+  const isLegendary = card.rarity === "Legendary" || isSetLegendary;
   const isEpic = card.rarity === "Epic";
   const isRare = card.rarity === "Rare";
 
@@ -118,7 +119,10 @@ export function CardItem({ card, className }: { card: any, className?: string })
       )}
     >
       {/* Outer Glows based on Rarity */}
-      {isLegendary && (
+      {isSetLegendary && (
+        <div className="absolute inset-[-6px] bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 rounded-3xl blur-[14px] opacity-100 animate-pulse bg-[length:200%_auto] animate-gradient-xy" />
+      )}
+      {!isSetLegendary && isLegendary && (
         <div className="absolute inset-[-4px] bg-gradient-to-r from-yellow-300 via-amber-500 to-yellow-300 rounded-3xl blur-md opacity-80 animate-pulse" />
       )}
       {isEpic && (
