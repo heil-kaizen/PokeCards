@@ -8,6 +8,7 @@ interface UserState {
   disconnectWallet: () => void;
   checkEligibility: (wallet: string) => Promise<void>;
   cards: any[];
+  totalUniqueCards: number;
   fetchVault: () => Promise<void>;
 }
 
@@ -16,13 +17,14 @@ export const useStore = create<UserState>((set, get) => ({
   isEligible: false,
   tokenBalance: 0,
   cards: [],
+  totalUniqueCards: 66,
   connectWallet: async (wallet: string) => {
     set({ wallet });
     await get().checkEligibility(wallet);
     await get().fetchVault();
   },
   disconnectWallet: () => {
-    set({ wallet: null, isEligible: false, tokenBalance: 0, cards: [] });
+    set({ wallet: null, isEligible: false, tokenBalance: 0, cards: [], totalUniqueCards: 66 });
   },
   checkEligibility: async (wallet: string) => {
     try {
@@ -43,7 +45,7 @@ export const useStore = create<UserState>((set, get) => ({
     try {
       const res = await fetch(`/api/vault/${wallet}`);
       const data = await res.json();
-      set({ cards: data.cards || [] });
+      set({ cards: data.cards || [], totalUniqueCards: data.totalUniqueCards || 66 });
     } catch (e) {
       console.error(e);
     }
